@@ -1,0 +1,24 @@
+<!-- templates/profile.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">
+  Bem vindo, {{ name }}!
+</h1>
+<h3 class="subtitle">
+Apresente o QRcode abaixo no sensor
+</h3>
+<img src="{{ qrcode(qrdata) }}">
+<h3 class="text">
+Atualiza em 10 seg... 
+<div align="center"><div class="loader"></div></div> 
+</h3>
+
+<script>
+    function autoRefresh() {
+        window.location = window.location.href;
+    }
+    //setInterval('autoRefresh()', 10000);
+</script>
+{% endblock %}
