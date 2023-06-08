@@ -1,6 +1,6 @@
 # ruralID
 
-In a new installed python3 linux machine:
+In any linux machine with python3 support:
 
     python3 -m venv ruralid
     source ruralid/bin/activate
