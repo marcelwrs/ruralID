@@ -5,6 +5,7 @@
 {% block content %}
 <div class="column is-4 is-offset-4">
     <h3 class="title">Login</h3>
+    <h4 class="text">Use as credenciais do sigaa</h3>
     <div class="box">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -16,7 +17,7 @@
         <form method="POST" action="/login">
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="email" name="email" placeholder="Email" autofocus="">
+                    <input class="input is-large" type="text" name="username" placeholder="Usuário" autofocus="">
                 </div>
             </div>
 

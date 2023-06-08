@@ -1,10 +1,11 @@
 # main.py
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
-from datetime import datetime
-from . import current_keys
+from datetime import datetime, timedelta
+from .models import User
+from . import db
 
 main = Blueprint('main', __name__)
 
@@ -15,18 +16,22 @@ def index():
 @main.route('/profile')
 @login_required
 def profile():
-    key = generate_password_hash(current_user.name+str(datetime.now()), method='sha256')
-    current_keys[current_user.name] = key
-    print(key)
-    return render_template('profile.html', name=current_user.name, qrdata=key)
+    if current_user.key == "" or (datetime.now() - current_user.timestamp).total_seconds() >= 10:
+        key = generate_password_hash(current_user.register+current_user.name+current_user.association+str(datetime.now()))
+        user = User.query.filter_by(register=current_user.register).update(dict(key=key, timestamp=datetime.now()))
+        db.session.commit()
+        print(key)
+    return render_template('profile.html', name=current_user.name.split(' ')[0], qrdata=current_user.key)
     
 @main.route('/validateqr', methods=['POST'])
-@login_required
+#@login_required
 def validateqr():
     qrdata = request.form.get('qrdata')
-    print(qrdata)
-    print(current_keys.values())
-    if qrdata in current_keys.values():
-        return "True"
+    user = User.query.filter(User.key == qrdata, User.timestamp >= (datetime.now() - timedelta(seconds=10))).first()
+    if user == None:
+        return jsonify(user)
     else:
-        return "False"
+        return jsonify({"register": user.register,
+            "name": user.name,
+            "function": user.function,
+            "association": user.association})

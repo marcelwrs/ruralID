@@ -5,6 +5,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required
 from .models import User
 from . import db
+from .sigaa import sigaa_lookup
+from datetime import datetime
 
 auth = Blueprint('auth', __name__)
 
@@ -14,19 +16,32 @@ def login():
 
 @auth.route('/login', methods=['POST'])
 def login_post():
-    email = request.form.get('email')
+    #email = request.form.get('email')
+    username = request.form.get('username')
     password = request.form.get('password')
     remember = True if request.form.get('remember') else False
 
-    user = User.query.filter_by(email=email).first()
+    # sigaa login and user info extraction
+    userinfo = sigaa_lookup(username, password)
 
-    # check if user actually exists
-    # take the user supplied password, hash it, and compare it to the hashed password in database
-    if not user or not check_password_hash(user.password, password): 
-        flash('Please check your login details and try again.')
+    # verify login
+    if userinfo == None:
+        flash('Usuário/senha inválidos. Verifique as credenciais e tente novamente.')
+        return redirect(url_for('auth.login')) # if user doesn't exist or password is wrong, reload the page
+    # verify userinfo
+    if not userinfo:
+        flash("Problema na extração de dados do sigaa. Precisa da intervenção do desenvolvedor.")
         return redirect(url_for('auth.login')) # if user doesn't exist or password is wrong, reload the page
 
-    # if the above check passes, then we know the user has the right credentials
+    # get user from db and insert if not there yet
+    user = User.query.filter_by(register=userinfo['register']).first()
+    if user == None:
+        new_user = User(register=userinfo['register'], name=userinfo['name'], association=userinfo['association'], function=userinfo['function'], key="", timestamp=datetime.now())
+        db.session.add(new_user)
+        db.session.commit()
+        user = User.query.filter_by(register=userinfo['register']).first()
+
+    # if the above checks pass, then we know the user has the right credentials
     login_user(user, remember=remember)
     return redirect(url_for('main.profile'))
 
