@@ -17,7 +17,7 @@ def index():
 @login_required
 def profile():
     if current_user.key == "" or (datetime.now() - current_user.timestamp).total_seconds() >= 10:
-        key = generate_password_hash(current_user.register+current_user.name+current_user.association+str(datetime.now()))
+        key = generate_password_hash(current_user.register+current_user.name+current_user.relationship+str(datetime.now()))
         user = User.query.filter_by(register=current_user.register).update(dict(key=key, timestamp=datetime.now()))
         db.session.commit()
         print(key)
@@ -34,4 +34,4 @@ def validateqr():
         return jsonify({"register": user.register,
             "name": user.name,
             "function": user.function,
-            "association": user.association})
+            "relationship": user.relationship})

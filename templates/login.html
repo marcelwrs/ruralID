@@ -32,6 +32,20 @@
                     Manter conectado
                 </label>
             </div>
+	    {% if reloptions %}
+		    <div class="field">
+			<div class="control">
+			    <div class="select">
+				    <select name="reloption">
+					    <option value="{{reloptions[0]}}" selected>{{reloptions[0]}}</option>
+					    {% for reloption in reloptions[1:] %}
+						    <option value="{{reloption}}">{{reloption}}</option>
+					    {% endfor %}
+		                    </select>
+			    </div>
+			</div>
+		    </div>
+	    {% endif %}
             <button class="button is-block is-info is-large is-fullwidth">Entrar</button>
         </form>
     </div>

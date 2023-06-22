@@ -1,42 +1,65 @@
 # auth.py
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required
 from .models import User
 from . import db
 from .sigaa import sigaa_lookup
 from datetime import datetime
+import json
 
 auth = Blueprint('auth', __name__)
 
 @auth.route('/login')
 def login():
+    # render relationship page
+    #if 'relations' in request.args:
+    #    relations = json.loads(request.args['relations'])
+    if 'reloptions' in session:
+        reloptions = list(session['reloptions'].keys())
+        print(reloptions)
+        #del session['reloptions']
+        return render_template('login.html', reloptions=reloptions)
+
     return render_template('login.html')
 
 @auth.route('/login', methods=['POST'])
 def login_post():
-    #email = request.form.get('email')
     username = request.form.get('username')
     password = request.form.get('password')
     remember = True if request.form.get('remember') else False
+    option = request.form.get('reloption')
+    if option != None:
+        reloption = session['reloptions'][option]
+        #reloption = session['reloptions']
+    else:
+        reloption = None
 
     # sigaa login and user info extraction
-    userinfo = sigaa_lookup(username, password)
+    status, userinfo = sigaa_lookup(username, password, reloption)
 
     # verify login
-    if userinfo == None:
+    if status == None:
         flash('Usuário/senha inválidos. Verifique as credenciais e tente novamente.')
         return redirect(url_for('auth.login')) # if user doesn't exist or password is wrong, reload the page
     # verify userinfo
-    if not userinfo:
+    if status == 'error':
         flash("Problema na extração de dados do sigaa. Precisa da intervenção do desenvolvedor.")
         return redirect(url_for('auth.login')) # if user doesn't exist or password is wrong, reload the page
+    # user need to select relationship first
+    if status == 'relationship':
+        print("userinfo: ", userinfo)
+        reloptions = {}
+        for option in userinfo:
+            reloptions[option[0]] = option[1]
+        session['reloptions'] = reloptions
+        return redirect(url_for('auth.login'))#, relations=json.dumps(userinfo)))
 
     # get user from db and insert if not there yet
     user = User.query.filter_by(register=userinfo['register']).first()
     if user == None:
-        new_user = User(register=userinfo['register'], name=userinfo['name'], association=userinfo['association'], function=userinfo['function'], key="", timestamp=datetime.now())
+        new_user = User(register=userinfo['register'], name=userinfo['name'], relationship=userinfo['relationship'], function=userinfo['function'], key="", timestamp=datetime.now())
         db.session.add(new_user)
         db.session.commit()
         user = User.query.filter_by(register=userinfo['register']).first()
