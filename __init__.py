@@ -5,6 +5,16 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager 
 from flask_qrcode import QRcode
 from werkzeug.middleware.proxy_fix import ProxyFix
+import os
+from oauthlib.oauth2 import WebApplicationClient
+
+# Configuration
+RURALID_SECRET_KEY = os.environ.get("RURALID_SECRET_KEY", None) # Need to set this environment var to work
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None) # Need to set this environment var to work
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None) # Need to set this environment var to work
+GOOGLE_DISCOVERY_URL = ("https://accounts.google.com/.well-known/openid-configuration")
+# OAuth 2 client setup
+client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
@@ -14,14 +24,19 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app)
     qrcode = QRcode(app)
 
-    app.config['SECRET_KEY'] = '9OLWxND4o83j4K4iuopO'
+    app.config['SECRET_KEY'] = RURALID_SECRET_KEY
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config['REMEMBER_COOKIE_DURATION'] = 60
+    app.config['PERMANENT_SESSION_LIFETIME'] = 60
 
     db.init_app(app)
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
+    login_manager.session_protection = "strong"
     login_manager.init_app(app)
+
+    print(client)
 
     from .models import User
 

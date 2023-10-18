@@ -29,7 +29,10 @@ def validateqr():
     qrdata = request.form.get('qrdata')
     user = User.query.filter(User.key == qrdata, User.timestamp >= (datetime.now() - timedelta(seconds=10))).first()
     if user == None:
-        return jsonify(user)
+        return jsonify({"register": -1,
+            "name": '',
+            "function": '',
+            "relationship": ''})
     else:
         return jsonify({"register": user.register,
             "name": user.name,
